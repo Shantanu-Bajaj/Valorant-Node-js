@@ -94,6 +94,20 @@ const authenticate = function (req, res, next) {
   });
 };
 
+app.get("/user", authenticate, (req, res) => {
+  res.send(req.decoded);
+  });
+  
+  app.get("/user/favourites", authenticate, (req, res) => {
+  var sql = "SELECT agents.agentid,agents.name,agents.devname,agents.displayicon FROM agents,favourites,users where agents.agentid = favourites.agentid and users.userid = favourites.userid and favourites.userid='"+ req.decoded.data.userid +"' ORDER BY agents.agentid";
+  con.query(sql, function (err, result, fields) {
+    if (err) throw err;
+    // console.log(result)
+    res.send(result); 
+  });
+  });
+  
+  
 
 
 
