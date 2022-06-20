@@ -56,6 +56,28 @@ con.query(sqll, function (err, result) {
 });
 });
 
+app.get("/user/login", (req, res) => {
+  if (req.query.email && req.query.password) {
+      var sql = "SELECT * FROM users WHERE email = '" + req.query.email + "' AND password = '" + req.query.password + "'";
+      con.query(sql, function (err, result) {
+        if (err) throw err;
+        if (result.length) {
+          let token = jwt.sign({ data: result[0] }, process.env.SECRET_KEY, {
+            expiresIn: 604800,
+          });
+          var sql1 = "INSERT INTO usertoken (email, token) values ('" + req.query.email + "', '" + token + "')";
+          con.query(sql1, function (err, result) {
+            if (err) throw err;
+          });
+            res.send({ message: "User Logged in successfully", token: token });
+        } else res.send({ Message: "Invalid Credentials" });
+      });
+    }
+    else{
+        res.send({err:"Please enter email or password"});
+    }
+});
+
 
 
 
