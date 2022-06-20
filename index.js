@@ -78,6 +78,22 @@ app.get("/user/login", (req, res) => {
     }
 });
 
+const authenticate = function (req, res, next) {
+  if (!req.headers.hasOwnProperty("authorization")) {
+    // res.status(401).send({err:"There was some error"});
+    res.status(401).send({err:"Please login first"});
+  }
+  let token = req.headers.authorization;
+  token = token.split(" ")[1];
+  jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+    if (err) res.status(401).send({ error: "Unauthorized" });
+    req.decoded = decoded;
+    // console.log(req.decoded.data.name);
+    // console.log(req.decoded);
+    next();
+  });
+};
+
 
 
 
