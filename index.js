@@ -118,6 +118,36 @@ app.get("/user/favourites", authenticate, (req, res) => {
   });
 });
 
+app.post("/user/addfav", authenticate, (req, res) => {
+  if (!req.query.agentid)
+    res.send({ message: "Please enter agent id to add in your favourites" });
+  else {
+    var sqll =
+      "SELECT agentid FROM favourites WHERE userid='" +
+      req.decoded.data.userid +
+      "' and agentid='" +
+      req.query.agentid +
+      "'";
+    con.query(sqll, function (err, result) {
+      if (err) throw err;
+      if (result.length)
+        res.send({ err: "This agent is already added in your favourites" });
+      else {
+        var sql =
+          "INSERT INTO favourites (userid,agentid) VALUES ('" +
+          req.decoded.data.userid +
+          "', '" +
+          req.query.agentid +
+          "')";
+        con.query(sql, function (err, results) {
+          if (err) throw err;
+          res.send({ message: "This agent has beed added in your favourites" });
+        });
+      }
+    });
+  }
+});
+
 
 
 app.listen(PORT, () => {
