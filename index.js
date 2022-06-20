@@ -21,5 +21,17 @@ con.connect(function (err) {
   console.log("Connected");
 });
 
+app.get("/allcharacters", (req, res) => {
+    con.query("SELECT * FROM agents", function (err, result, fields) {
+        if (err) throw err;
+        res.send(result); 
+    });
+});
 
+
+
+
+app.listen(PORT, () => {
+console.log(`listening on port ${PORT}`);
+})
 
