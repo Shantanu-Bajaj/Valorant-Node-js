@@ -184,7 +184,14 @@ app.post("/user/removefav", authenticate, (req, res) => {
   }
 });
 
-
+app.post("/user/logout", authenticate, (req, res) => {
+  var sql =
+    "DELETE FROM usertoken WHERE email='" + req.decoded.data.email + "'";
+  con.query(sql, function (err, results) {
+    if (err) throw err;
+    res.send("User Logged out successfully");
+  });
+});
 
 app.listen(PORT, () => {
   console.log(`listening on port ${PORT}`);
