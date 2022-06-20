@@ -148,6 +148,42 @@ app.post("/user/addfav", authenticate, (req, res) => {
   }
 });
 
+app.post("/user/removefav", authenticate, (req, res) => {
+  if (!req.query.agentid)
+    res.send({
+      message: "Please enter agent id to remove from your favourites",
+    });
+  else {
+    var sqll =
+      "SELECT agentid FROM favourites WHERE userid='" +
+      req.decoded.data.userid +
+      "' and agentid='" +
+      req.query.agentid +
+      "'";
+    con.query(sqll, function (err, result) {
+      if (err) throw err;
+      if (!result.length)
+        res.send({
+          err: "No agent with specified agent id found in your favourites",
+        });
+      else {
+        var sql =
+          "DELETE FROM favourites where userid='" +
+          req.decoded.data.userid +
+          "' and agentid='" +
+          req.query.agentid +
+          "'";
+        con.query(sql, function (err, results) {
+          if (err) throw err;
+          res.send({
+            message: "The agent has been removed from your favourites",
+          });
+        });
+      }
+    });
+  }
+});
+
 
 
 app.listen(PORT, () => {
