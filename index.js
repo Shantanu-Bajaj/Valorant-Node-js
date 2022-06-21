@@ -34,7 +34,7 @@ app.post("/user/register", (req, res) => {
     if (err) throw err;
     if (!result.length) {
       if (req.query.password.length < 6) {
-        res.send({ err: "Password length should be at least 6 characters" });
+        res.status(401).send({ err: "Password length should be at least 6 characters" });
       } else {
         var sql =
           "INSERT INTO users (name, email, password) VALUES ('" +
@@ -46,11 +46,11 @@ app.post("/user/register", (req, res) => {
           "')";
         con.query(sql, function (err, results) {
           if (err) throw err;
-          res.send({ message: "User Registered successfully" });
+          res.send({ message: "Success"},{data:{"name": req.query.name, "email": req.query,"password": req.query.password}});
         });
       }
     } else {
-      res.send({ message: "Email already exists" });
+      res.status(401).send({ err: "Email already exists" });
     }
   });
 });
@@ -78,11 +78,11 @@ app.get("/user/login", (req, res) => {
         con.query(sql1, function (err, result) {
           if (err) throw err;
         });
-        res.send({ message: "User Logged in successfully", token: token });
-      } else res.send({ Message: "Invalid Credentials" });
+        res.send({ message: "success", token: token ,data:{"userid": result[0].userid,"name":result[0].name, "email":result[0].email, "password":result[0].password}});
+      } else res.status(401).send({err: "Invalid Credentials" });
     });
   } else {
-    res.send({ err: "Please enter email or password" });
+    res.status(204).send({ err: "Please enter email or password" });
   }
 });
 
@@ -93,11 +93,18 @@ const authenticate = function (req, res, next) {
   }
   let token = req.headers.authorization;
   token = token.split(" ")[1];
-  jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
+  var sql = "SELECT token FROM usertoken where token='"+ token +"'";
+  con.query(sql, function (err,result) {    
+    if(result.length)
+    // console.log(result);
+    jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
     if (err) res.status(401).send({ error: "Unauthorized" });
-    req.decoded = decoded;
+      req.decoded = decoded; 
+    });
     // console.log(req.decoded.data.name);
     // console.log(req.decoded);
+    else
+    res.status(401).send({ error: "Please Login First"});
     next();
   });
 };
@@ -120,7 +127,7 @@ app.get("/user/favourites", authenticate, (req, res) => {
 
 app.post("/user/addfav", authenticate, (req, res) => {
   if (!req.query.agentid)
-    res.send({ message: "Please enter agent id to add in your favourites" });
+    res.status(400).send({ err: "Enter agent id"});
   else {
     var sqll =
       "SELECT agentid FROM favourites WHERE userid='" +
@@ -131,7 +138,7 @@ app.post("/user/addfav", authenticate, (req, res) => {
     con.query(sqll, function (err, result) {
       if (err) throw err;
       if (result.length)
-        res.send({ err: "This agent is already added in your favourites" });
+        res.status(406).send({ err: "Already added" });
       else {
         var sql =
           "INSERT INTO favourites (userid,agentid) VALUES ('" +
@@ -141,8 +148,13 @@ app.post("/user/addfav", authenticate, (req, res) => {
           "')";
         con.query(sql, function (err, results) {
           if (err) throw err;
-          res.send({ message: "This agent has beed added in your favourites" });
         });
+        var sql2 = "SELECT * FROM agents WHERE agentid='" + req.query.agentid + "'";
+        con.query(sql2, function (err, resultss) {
+          if (err) throw err;
+          // console.log(resultss);
+          res.send({ message: "success" ,data:{"agentid":resultss[0].agentid , "name":resultss[0].name, "devname":resultss[0].devname,"displayicon":resultss[0].displayicon}});
+        })
       }
     });
   }
@@ -150,9 +162,7 @@ app.post("/user/addfav", authenticate, (req, res) => {
 
 app.post("/user/removefav", authenticate, (req, res) => {
   if (!req.query.agentid)
-    res.send({
-      message: "Please enter agent id to remove from your favourites",
-    });
+    res.status(400).send({err: "enter agent id"});
   else {
     var sqll =
       "SELECT agentid FROM favourites WHERE userid='" +
@@ -163,9 +173,7 @@ app.post("/user/removefav", authenticate, (req, res) => {
     con.query(sqll, function (err, result) {
       if (err) throw err;
       if (!result.length)
-        res.send({
-          err: "No agent with specified agent id found in your favourites",
-        });
+        res.status(404).send({err: "Not found"});
       else {
         var sql =
           "DELETE FROM favourites where userid='" +
@@ -175,10 +183,13 @@ app.post("/user/removefav", authenticate, (req, res) => {
           "'";
         con.query(sql, function (err, results) {
           if (err) throw err;
-          res.send({
-            message: "The agent has been removed from your favourites",
-          });
         });
+        var sql2 = "SELECT * FROM agents WHERE agentid='" + req.query.agentid + "'";
+        con.query(sql2, function (err, resultss) {
+          if (err) throw err;
+          // console.log(resultss);
+          res.send({message: "success",data:{"agentid":resultss[0].agentid , "name":resultss[0].name, "devname":resultss[0].devname,"displayicon":resultss[0].displayicon}});
+        })
       }
     });
   }
@@ -189,7 +200,7 @@ app.post("/user/logout", authenticate, (req, res) => {
     "DELETE FROM usertoken WHERE email='" + req.decoded.data.email + "'";
   con.query(sql, function (err, results) {
     if (err) throw err;
-    res.send("User Logged out successfully");
+    res.send("success");
   });
 });
 
